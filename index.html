@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VESPÉR · AW / 2026</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230A0A0C'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23C9A96E' font-family='Georgia'%3EV%3C/text%3E%3C/svg%3E">
+<meta name="description" content="VESPÉR, дом вечерней и верхней одежды. Демонстрационный проект для портфолио.">
+
+<!-- Шрифты: Google Fonts, Prata (дисплейный дидон) + Manrope (UI/текст), с кириллицей -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- первый экран: постер героя грузим раньше всего -->
+<link rel="preload" as="image" href="assets/H-1-poster.webp" type="image/webp" fetchpriority="high">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Prata&display=swap&subset=cyrillic,latin" rel="stylesheet">
+
+<style>
+/* ============================================================
+   ТОКЕНЫ ПАЛИТРЫ
+   ============================================================ */
+:root{
+  --bg:        #0A0A0C;
+  --surface:   #121214;
+  --surface-2: #1B1B1F;
+  --line:      #2C2C32;
+  --text:      #ECEAE4;
+  --muted:     #8C8A84;
+  --champagne: #BFA67A;
+  --wine:      #5E1322;
+  --champagne-glow: rgba(191,166,122,0.14);
+
+  --maxw: 1320px;
+  --gutter: 7vw;
+  --pause: clamp(100px, 14vw, 180px);
+
+  --ff-display: "Prata", Georgia, serif;
+  --ff-ui: "Manrope", system-ui, sans-serif;
+}
+
+/* ============================================================
+   БАЗА
+   ============================================================ */
+*{ box-sizing: border-box; }
+html{ -webkit-text-size-adjust: 100%; }
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff-ui);
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img, video{ display: block; max-width: 100%; }
+a{ color: inherit; text-decoration: none; }
+button{ font-family: inherit; cursor: pointer; }
+
+/* фокус-стили: шампань */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{
+  outline: 2px solid var(--champagne);
+  outline-offset: 3px;
+}
+
+/* ОБЩИЕ УТИЛИТЫ */
+.wrap{ max-width: var(--maxw); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
+.eyebrow{
+  font-family: var(--ff-ui);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.lead{
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  font-weight: 300;
+  line-height: 1.6;
+  max-width: 56ch;
+  color: var(--text);
+}
+h2.section-title{
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.005em;
+  margin: 0;
+}
+
+/* hairline-разделитель (прочерчивается скриптом) */
+.hairline{
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* плейсхолдер Higgsfield */
+.placeholder{
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.placeholder .ph-inner{
+  text-align: center;
+  padding: 2rem;
+  max-width: 34ch;
+}
+.placeholder .ph-code{
+  font-family: var(--ff-display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: var(--champagne);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+.placeholder .ph-desc{
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* reveal: по умолчанию ВСЁ видно. JS прячет только если GSAP реально загрузился
+   и движение разрешено (класс ставится из скрипта). Так падение CDN не прячет контент. */
+.reveal{ opacity: 1; }
+.pre-reveal .reveal{ opacity: 0; transform: translateY(24px); }
+
+/* маска-раскрытие слов заголовков: слова режет JS, без него текст как есть */
+.split-w{ display: inline-block; overflow: hidden; vertical-align: top; padding: 0.04em 0.02em 0.2em; margin: -0.04em -0.02em -0.2em; }
+.split-w > span{ display: inline-block; will-change: transform; }
+.hero-title .split-w{ padding-top: 0.28em; margin-top: -0.28em; } /* место под акцент É */
+
+/* выделение и скроллбар из палитры */
+::selection{ background: var(--champagne); color: var(--bg); }
+html{ scrollbar-color: var(--line) var(--bg); }
+
+/* плёночное зерно поверх всего сайта: один статичный SVG-тайл, сдвигается ступеньками */
+.grain{
+  position: fixed;
+  inset: -50%;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.9s steps(5) infinite;
+}
+@keyframes grain{
+  0%{ transform: translate(0,0); }
+  20%{ transform: translate(-4%,3%); }
+  40%{ transform: translate(3%,-5%); }
+  60%{ transform: translate(-6%,-2%); }
+  80%{ transform: translate(5%,4%); }
+  100%{ transform: translate(0,0); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pre-reveal .reveal{ opacity: 1; transform: none; }
+  html{ scroll-behavior: auto; }
+  .grain{ animation: none; }
+}
+
+/* ============================================================
+   СЕКЦИИ — стили добавляются по частям ниже
+   ============================================================ */
+/* STYLE-HEADER */
+.site-header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.6rem var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 400ms ease, padding 400ms ease, border-color 400ms ease;
+}
+.site-header.docked{
+  background: var(--surface);
+  padding: 1rem var(--gutter);
+  border-bottom: 1px solid var(--line);
+}
+.site-header .logo{
+  font-family: var(--ff-display);
+  font-weight: 500;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+  color: var(--champagne);
+}
+.site-nav{ display: flex; gap: 2.2rem; align-items: center; }
+.site-nav a{
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  position: relative;
+}
+.site-nav a::after{
+  content: "";
+  position: absolute;
+  left: 0; bottom: -4px;
+  width: 100%; height: 1px;
+  background: var(--champagne);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms ease;
+}
+.site-nav a:hover::after{ transform: scaleX(1); }
+.season-mark{
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+/* бургер */
+.burger{
+  display: none;
+  background: none;
+  border: 0;
+  padding: 0.4rem;
+  width: 40px; height: 32px;
+  position: relative;
+  z-index: 120;
+}
+.burger span{
+  display: block;
+  width: 26px; height: 1px;
+  background: var(--text);
+  margin: 6px 0;
+  transition: transform 300ms ease, opacity 300ms ease;
+}
+.burger.open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+.burger.open span:nth-child(2){ opacity: 0; }
+.burger.open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
+/* шторка */
+.drawer{
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: var(--gutter);
+  transform: translateY(-100%);
+  transition: transform 500ms cubic-bezier(.76,0,.24,1);
+}
+.drawer.open{ transform: translateY(0); }
+.drawer a{
+  font-family: var(--ff-display);
+  font-size: clamp(2.2rem, 9vw, 3.4rem);
+  font-weight: 400;
+  color: var(--text);
+}
+.drawer a:hover{ color: var(--champagne); }
+.drawer .drawer-season{
+  font-family: var(--ff-ui);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-top: 2rem;
+}
+/* STYLE-HERO */
+.hero-scroll{ position: relative; height: 240vh; }
+.reduced .hero-scroll{ height: 100vh; }
+.hero-sticky{
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;   /* большой вьюпорт: не дёргается, когда прячется адресная строка */
+  overflow: hidden;
+}
+.hero-media{
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+}
+/* плейсхолдер/видео героя заполняет экран */
+.hero-media .placeholder,
+.hero-media video{
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border: 0;
+}
+/* VHS как намеренный стиль: строки развёртки, виньетка, редкая полоса трекинга.
+   Цвет видео не трогаем, слой только поверх. */
+.hero-vhs{
+  position: absolute; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 85% 75% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.42) 100%),
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0.16) 0 1px, rgba(0,0,0,0) 1px 3px);
+}
+.hero-vhs::before{
+  content: "";
+  position: absolute; left: 0; right: 0; top: -20%;
+  height: 14%;
+  background: linear-gradient(to bottom, rgba(255,240,225,0) 0%, rgba(255,240,225,0.05) 45%, rgba(190,210,255,0.035) 55%, rgba(255,240,225,0) 100%);
+  animation: vhs-track 11s linear infinite;
+}
+@keyframes vhs-track{
+  0%{ transform: translateY(0); }
+  100%{ transform: translateY(900%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-vhs::before{ animation: none; display: none; }
+}
+/* градиент снизу в фон — читаемость текста */
+.hero-sticky::after{
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 55%;
+  background: linear-gradient(to top, var(--bg) 8%, rgba(10,10,12,0) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+.hero-content{
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.hero-title{
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: clamp(3.4rem, 10.5vw, 9.5rem);
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.hero-tagline{
+  font-weight: 300;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  color: var(--text);
+  margin: 1.2rem 0 0;
+  max-width: 40ch;
+}
+.hero-edition{
+  position: absolute;
+  right: var(--gutter);
+  bottom: calc(var(--gutter) + 0.2rem);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-align: right;
+}
+.scroll-hint{
+  position: absolute;
+  left: 50%;
+  bottom: 2.2rem;
+  transform: translateX(-50%);
+  z-index: 4;
+  color: var(--champagne);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  animation: breathe 2.8s ease-in-out infinite;
+}
+.scroll-hint .shint-label{
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+.scroll-hint svg{ width: 16px; height: 28px; }
+@keyframes breathe{ 0%,100%{ opacity: 0.35; } 50%{ opacity: 1; } }
+@media (prefers-reduced-motion: reduce){
+  .scroll-hint{ animation: none; opacity: 0.7; }
+}
+/* STYLE-MANIFEST */
+.manifest{
+  background: transparent; /* фон даёт body, мягко меняется между секциями */
+  color: var(--text);
+  padding: var(--pause) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.manifest .wrap{ padding-top: clamp(2rem,6vw,4rem); padding-bottom: clamp(2rem,6vw,4rem); }
+.manifest .eyebrow{ color: var(--champagne); }
+.manifest-text{
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.6vw, 3.2rem);
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+  max-width: 24ch;
+  margin: 1.6rem 0 0;
+}
+/* STYLE-COLLECTION
+   Десктоп: секция пинится, лента образов едет горизонтально.
+   Кадр 3:4 высотой --fh, гигантский контурный номер за кадром,
+   рядом с кадром подпись каталога: номер, название, состав, цена. */
+.collection{
+  --fh: 72vh;                       /* высота кадра */
+  --fw: calc(var(--fh) * 0.754);    /* ширина кадра, пропорция ассетов */
+  position: relative;
+  overflow: clip;
+}
+.coll-pin{ position: relative; height: 100vh; overflow: hidden; }
+.coll-track{
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: max-content;
+  will-change: transform;
+}
+.coll-intro{
+  position: relative;
+  flex: 0 0 auto;
+  width: 58vw;
+  height: 100%;
+  padding: 0 var(--gutter);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.coll-intro .eyebrow{ color: var(--champagne); position: relative; z-index: 2; margin: 0; }
+.coll-intro-ghost{
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: 23vh;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--champagne);
+  opacity: 0.55;
+  margin-top: 2.4rem;
+}
+
+.look{
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--fw) + 40vw);
+  height: 100%;
+}
+/* гигантский контурный номер, за кадром */
+.look-ghost{
+  position: absolute;
+  z-index: 0;
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: 62vh;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--champagne);
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.look-frame{
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  width: var(--fw);
+  height: var(--fh);
+  overflow: hidden;
+}
+.look-clip{ position: absolute; inset: 0; overflow: hidden; }
+.look-clip img{
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform-origin: 50% 60%;
+}
+/* название: подпись каталога в поле у кадра. Manrope капсом, кость, кадр не трогает */
+.look-name{
+  margin: 0 0 0.55rem;
+  font-family: var(--ff-ui);
+  font-weight: 400;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(236,234,228,0.84);
+}
+.look-name .ln{ display: inline; }
+/* подпись: мелко, вне колонки, у края кадра */
+.look-note{
+  position: absolute;
+  z-index: 3;
+  width: 15rem;
+  font-size: 0.86rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.look-num{
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: var(--ff-display);
+  font-size: 1rem;
+  color: var(--champagne);
+  margin-bottom: 0.9rem;
+}
+.look-num::after{ content: ""; width: 3.2rem; height: 1px; background: var(--champagne); opacity: 0.6; }
+.look-meta{ margin: 0 0 1.1rem; }
+.look-meta .price{ display: block; margin-top: 0.3rem; color: var(--text); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.look-link{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--champagne);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(191,166,122,0.35);
+  transition: border-color 220ms ease;
+}
+.look-link:hover{ border-color: var(--champagne); }
+.look-link .arrow{ transition: transform 220ms ease; }
+.look-link:hover .arrow{ transform: translateX(6px); }
+
+/* ритм ленты: нечётные и чётные образы стоят по-разному */
+.look--a .look-frame{ left: 20vw; top: 15vh; }
+.look--a .look-ghost{ left: 2vw; top: 4vh; }
+.look--a .look-note{ left: calc(20vw + var(--fw) + 2.6vw); top: 17vh; }
+
+.look--b .look-frame{ left: 24vw; top: 11vh; }
+.look--b .look-ghost{ right: 0; bottom: 2vh; }
+.look--b .look-note{ left: calc(24vw - 15rem - 2.6vw); bottom: 16vh; text-align: right; }
+.look--b .look-num{ justify-content: flex-end; flex-direction: row-reverse; }
+
+.coll-outro{ flex: 0 0 auto; width: 16vw; }
+
+/* индикатор: счётчик и тонкая шампань-линия */
+.coll-hud{
+  position: absolute;
+  z-index: 5;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 4.5vh;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  pointer-events: none;
+}
+.coll-count{
+  font-family: var(--ff-display);
+  font-size: 0.95rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.coll-count .of{ color: var(--muted); }
+.coll-bar{ position: relative; flex: 1; height: 1px; background: var(--line); }
+.coll-bar i{
+  position: absolute; inset: 0;
+  background: var(--champagne);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* Десктоп без живой ленты (reduced-motion, CDN не загрузился):
+   развороты идут столбиком, по экрану на образ, ничего не прячется за край */
+@media (min-width: 861px){
+  html:not(.coll-live) .coll-pin{ height: auto; overflow: visible; }
+  html:not(.coll-live) .coll-track{ flex-wrap: wrap; width: auto; height: auto; }
+  html:not(.coll-live) .coll-intro{ width: 100%; height: 50vh; }
+  html:not(.coll-live) .look{ width: 100%; height: 100vh; }
+  html:not(.coll-live) .coll-hud, html:not(.coll-live) .coll-outro{ display: none; }
+}
+/* Телефон и узкий планшет: без горизонтального пина, вертикальная лента */
+@media (max-width: 860px){
+  .collection{ --fh: auto; padding: var(--pause) 0 calc(var(--pause) * 0.5); }
+  .coll-pin{ height: auto; overflow: visible; }
+  .coll-track{ display: block; width: auto; height: auto; transform: none !important; }
+  .coll-intro{ width: auto; height: auto; padding: 0 var(--gutter) 2rem; overflow: hidden; }
+  .coll-intro-ghost{ font-size: 21vw; margin-top: 1.2rem; }
+  .coll-hud{ display: none; }
+  .coll-outro{ display: none; }
+
+  .look{
+    width: auto;
+    height: auto;
+    padding: 3.5rem var(--gutter) 4.5rem;
+    overflow: hidden;
+  }
+  .look .look-ghost{
+    font-size: 58vw;
+    top: 0.5rem; bottom: auto;
+    left: auto; right: -2vw;
+  }
+  .look--b .look-ghost{ left: -2vw; right: auto; }
+  .look .look-frame{
+    position: relative;
+    left: auto; top: auto;
+    width: 82%;
+    height: auto;
+    aspect-ratio: 1659 / 2200;
+  }
+  .look--b .look-frame{ margin-left: auto; }
+  .look .look-note{
+    position: relative;
+    left: auto; top: auto; bottom: auto;
+    width: auto;
+    max-width: 17rem;
+    margin: 1.4rem 0 0;
+    text-align: left;
+  }
+  .look--b .look-note{ margin-left: 18%; }
+  .look--b .look-num{ justify-content: flex-start; flex-direction: row; }
+}
+/* STYLE-FABRIC */
+.fabric{ position: relative; padding: var(--pause) 0; }
+.fabric-scroll{ position: relative; height: 190vh; }
+.reduced .fabric-scroll{ height: 100vh; }
+.fabric-media{ clip-path: inset(0 0 0 0); will-change: clip-path; }
+.fabric-sticky{
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;
+  overflow: hidden;
+}
+.fabric-media, .fabric-media .placeholder, .fabric-media video{
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border: 0;
+}
+.fabric-media .placeholder{ border: 0; }
+.fabric-sticky::after{
+  content:"";
+  position:absolute; inset:0;
+  background: linear-gradient(90deg, rgba(10,10,12,0.85) 0%, rgba(10,10,12,0.2) 45%, rgba(10,10,12,0) 70%);
+  pointer-events:none; z-index:2;
+}
+.fabric-text{
+  position: absolute;
+  z-index: 3;
+  left: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 34ch;
+}
+.fabric-text .section-title{ margin: 0.8rem 0 1.2rem; }
+/* STYLE-ATELIER */
+.atelier{ padding: var(--pause) 0; }
+.atelier .grid{
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+.atelier-name{
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  line-height: 1.08;
+  letter-spacing: 0.005em;
+  margin: 1rem 0 0;
+}
+.atelier-story{
+  max-width: 44ch;
+}
+.atelier-story p{ font-weight: 300; }
+/* шампань-рамка-паспарту вместо портрета */
+.passepartout{
+  width: min(100%, 420px);
+  border: 1px solid var(--champagne);
+  box-shadow: 0 0 0 1px var(--bg) inset, 0 0 60px var(--champagne-glow);
+  aspect-ratio: 4 / 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--surface);
+}
+.passepartout .monogram{
+  font-family: var(--ff-display);
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: var(--champagne);
+  line-height: 1;
+}
+.passepartout .sign{
+  position: absolute;
+  bottom: clamp(1rem,3vw,2rem);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.passepartout-wrap{ position: relative; display: flex; align-items: center; justify-content: center; }
+/* STYLE-WAITLIST */
+.waitlist{ padding: var(--pause) 0; }
+.waitlist .grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+.waitlist-text .section-title{ margin: 0.8rem 0 1.4rem; }
+.waitlist-form{ display: flex; flex-direction: column; gap: 1.2rem; }
+.field label{
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.field input, .field select{
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--ff-ui);
+  font-size: 0.95rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+.field select{
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23BFA67A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 20px center;
+  background-size: 12px 8px;
+  padding-right: 52px;
+}
+.field input:focus, .field select:focus{
+  outline: none;
+  border-color: var(--champagne);
+  box-shadow: 0 0 0 1px var(--champagne), 0 0 30px var(--champagne-glow);
+}
+.btn-accent{
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--champagne);
+  color: var(--champagne);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.95rem 2.2rem;
+  transition: box-shadow 220ms ease, background 220ms ease, color 220ms ease;
+}
+.btn-accent:hover{
+  box-shadow: 0 0 36px var(--champagne-glow);
+  background: var(--champagne);
+  color: var(--bg);
+}
+.form-done{
+  display: none;
+  font-family: var(--ff-display);
+  font-size: 1.4rem;
+  color: var(--champagne);
+  line-height: 1.3;
+  padding: 1rem 0;
+}
+.form-done.show{ display: block; }
+/* STYLE-FOOTER */
+.site-footer{
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding: clamp(3rem, 7vw, 6rem) 0 2.4rem;
+}
+.site-footer .grid{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  align-items: start;
+}
+.footer-logo{
+  font-family: var(--ff-display);
+  font-weight: 500;
+  font-size: 2rem;
+  color: var(--champagne);
+}
+.footer-col h4{
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin: 0 0 1rem;
+  font-weight: 500;
+}
+.footer-col a{ display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 0.6rem; }
+.footer-col a:hover{ color: var(--champagne); }
+.socials{ display: flex; gap: 0.8rem; }
+.socials a{
+  width: 40px; height: 40px;
+  border: 1px solid var(--champagne);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--champagne);
+  margin: 0;
+  transition: box-shadow 220ms ease;
+}
+.socials a:hover{ box-shadow: 0 0 24px var(--champagne-glow); }
+.socials svg{ width: 16px; height: 16px; }
+.footer-bottom{
+  max-width: var(--maxw);
+  margin: clamp(2.5rem,5vw,4rem) auto 0;
+  padding: 1.6rem var(--gutter) 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+/* STYLE-RESPONSIVE */
+@media (max-width: 860px){
+  :root{ --gutter: 6vw; }
+  .site-nav{ display: none; }
+  .season-mark{ display: none; }
+  .burger{ display: block; }
+
+  .atelier .grid{ grid-template-columns: 1fr; }
+  .waitlist .grid{ grid-template-columns: 1fr; }
+  .fabric-text{ right: var(--gutter); max-width: none; }
+  .fabric-sticky::after{
+    background: linear-gradient(180deg, rgba(10,10,12,0.4) 0%, rgba(10,10,12,0.85) 100%);
+  }
+  .site-footer .grid{ grid-template-columns: 1fr; }
+}
+@media (max-width: 520px){
+  .hero-scroll{ height: 220vh; }
+  .fabric-scroll{ height: 180vh; }
+  .hero-tagline{ max-width: 26ch; }
+  .scroll-hint{ left: auto; right: var(--gutter); transform: none; bottom: 42vh; }
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- HEADER -->
+<header class="site-header" id="siteHeader">
+  <a href="#hero" class="logo">VESPÉR</a>
+  <nav class="site-nav" aria-label="Основная навигация">
+    <a href="#collection">Коллекция</a>
+    <a href="#atelier">Дом</a>
+    <a href="#atelier">Ателье</a>
+    <a href="#waitlist">Лист ожидания</a>
+  </nav>
+  <span class="season-mark">AW / 2026</span>
+  <button class="burger" id="burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="drawer">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="drawer" id="drawer" aria-hidden="true">
+  <a href="#collection">Коллекция</a>
+  <a href="#atelier">Дом</a>
+  <a href="#atelier">Ателье</a>
+  <a href="#waitlist">Лист ожидания</a>
+  <span class="drawer-season">AW / 2026</span>
+</div>
+<!-- HERO -->
+<main id="main">
+<section class="hero-scroll" id="hero" data-bg="#0A0A0C" aria-label="VESPÉR, осень–зима 2026">
+  <div class="hero-sticky">
+    <div class="hero-media">
+      <!-- H-1: видео под перемотку скроллом. Источник выбирает скрипт ниже
+           (телефон <768px получает лёгкую версию). Без src остаётся постер. -->
+      <video id="heroVideo" muted playsinline preload="auto" poster="assets/H-1-poster.webp"
+             data-src="assets/H-1-hero-scrub.mp4" data-src-m="assets/H-1-hero-scrub-m.mp4"
+             data-poster-m="assets/H-1-poster-m.webp"></video>
+      <script>
+      (function(){
+        var v=document.getElementById("heroVideo");
+        var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var small=window.innerWidth<768;
+        if(small) v.poster=v.dataset.posterM;  // на телефоне вертикальный кадр, а не середина 16:9
+        if(rm){ document.documentElement.classList.add("reduced"); return; }
+        v.src = small ? v.dataset.srcM : v.dataset.src;
+      })();
+      </script>
+      <div class="hero-vhs" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero-content">
+      <h1 class="hero-title">VESPÉR</h1>
+      <p class="hero-tagline">Одежда для вечера</p>
+    </div>
+    <span class="hero-edition">AW / 2026 · ВЫПУСК 001</span>
+
+    <div class="scroll-hint" aria-hidden="true">
+      <span class="shint-label">листайте</span>
+      <svg viewBox="0 0 16 28" fill="none" stroke="currentColor" stroke-width="1">
+        <line x1="8" y1="0" x2="8" y2="24"/>
+        <polyline points="2,18 8,26 14,18"/>
+      </svg>
+    </div>
+  </div>
+</section>
+<!-- MANIFEST -->
+<section class="manifest" id="manifest" data-bg="#121214" aria-label="О доме">
+  <div class="wrap">
+    <p class="eyebrow reveal">О доме</p>
+    <p class="manifest-text reveal">Один выпуск в сезон. Каждая вещь пронумерована и сшита надолго.</p>
+  </div>
+</section>
+<!-- COLLECTION -->
+<section class="collection" id="collection" aria-label="Коллекция" data-bg="#0A0A0C">
+  <div class="coll-pin">
+    <div class="coll-track">
+      <div class="coll-intro">
+        <p class="eyebrow">Коллекция · AW / 2026</p>
+        <div class="coll-intro-ghost" aria-hidden="true">AW / 2026</div>
+      </div>
+      <!-- L-1 -->
+      <article class="look look--a" data-look="01">
+        <span class="look-ghost" aria-hidden="true" data-depth>01</span>
+        <figure class="look-frame">
+          <div class="look-clip">
+            <img src="assets/L-1-palto.webp" width="1760" height="2336" loading="lazy" decoding="async" alt="Образ 01: пальто «Полночь»">
+          </div>
+        </figure>
+        <div class="look-note">
+          <div class="look-num">01</div>
+          <h2 class="look-name"><span class="ln">Пальто</span> <span class="ln">«Полночь»</span></h2>
+          <p class="look-meta">Шерсть с кашемиром. Длина ниже колена.<span class="price">от 240 000 ₽</span></p>
+          <a class="look-link" href="#waitlist">В лист ожидания <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      <!-- L-2 -->
+      <article class="look look--b" data-look="02">
+        <span class="look-ghost" aria-hidden="true" data-depth>02</span>
+        <figure class="look-frame">
+          <div class="look-clip">
+            <img src="assets/L-2-kostyum.webp" width="1760" height="2336" loading="lazy" decoding="async" alt="Образ 02: костюм «Антрацит»">
+          </div>
+        </figure>
+        <div class="look-note">
+          <div class="look-num">02</div>
+          <h2 class="look-name"><span class="ln">Костюм</span> <span class="ln">«Антрацит»</span></h2>
+          <p class="look-meta">Шерсть Super 130’s. Прямой силуэт.<span class="price">от 180 000 ₽</span></p>
+          <a class="look-link" href="#waitlist">В лист ожидания <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      <!-- L-3 -->
+      <article class="look look--a" data-look="03">
+        <span class="look-ghost" aria-hidden="true" data-depth>03</span>
+        <figure class="look-frame">
+          <div class="look-clip">
+            <img src="assets/L-3-plate.webp" width="1760" height="2336" loading="lazy" decoding="async" alt="Образ 03: платье «Мгла»">
+          </div>
+        </figure>
+        <div class="look-note">
+          <div class="look-num">03</div>
+          <h2 class="look-name"><span class="ln">Платье</span> <span class="ln">«Мгла»</span></h2>
+          <p class="look-meta">Шёлк. Длина в пол, открытая спина.<span class="price">от 160 000 ₽</span></p>
+          <a class="look-link" href="#waitlist">В лист ожидания <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      <!-- L-4 -->
+      <article class="look look--b" data-look="04">
+        <span class="look-ghost" aria-hidden="true" data-depth>04</span>
+        <figure class="look-frame">
+          <div class="look-clip">
+            <img src="assets/L-4-kurtka.webp" width="1760" height="2336" loading="lazy" decoding="async" alt="Образ 04: куртка «Сумерки»">
+          </div>
+        </figure>
+        <div class="look-note">
+          <div class="look-num">04</div>
+          <h2 class="look-name"><span class="ln">Куртка</span> <span class="ln">«Сумерки»</span></h2>
+          <p class="look-meta">Гладкая кожа, шёлковая подкладка.<span class="price">от 210 000 ₽</span></p>
+          <a class="look-link" href="#waitlist">В лист ожидания <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      <div class="coll-outro" aria-hidden="true"></div>
+    </div>
+    <div class="coll-hud" aria-hidden="true">
+      <span class="coll-count"><span class="cur">01</span> <span class="of">/ 04</span></span>
+      <span class="coll-bar"><i></i></span>
+    </div>
+  </div>
+</section>
+<!-- FABRIC -->
+<section class="fabric" id="fabric" data-bg="#0A0A0C" aria-label="Ткань">
+  <div class="fabric-scroll">
+    <div class="fabric-sticky">
+      <div class="fabric-media">
+        <!-- D-1: макро ткани, перемотка скроллом. Грузится при подходе к секции. -->
+        <video id="fabricVideo" muted playsinline preload="none" data-poster="assets/D-1-poster.webp"
+               data-src="assets/D-1-fabric-scrub.mp4" data-src-m="assets/D-1-fabric-scrub-m.mp4"></video>
+        <noscript><img src="assets/D-1-poster.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></noscript>
+      </div>
+      <div class="fabric-text reveal">
+        <p class="eyebrow">Ткань</p>
+        <h2 class="section-title">Ткань вблизи</h2>
+        <p class="lead">Шерсть из Биеллы, плотный шёлк, гладкая кожа. Каждую ткань выбираем сами, на ощупь.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ATELIER -->
+<section class="atelier" id="atelier" data-bg="#121214" aria-label="Ателье">
+  <div class="grid">
+    <div>
+      <p class="eyebrow reveal">Рука</p>
+      <h2 class="atelier-name reveal">Марк Вейн</h2>
+      <div class="atelier-story reveal">
+        <p class="lead">Двадцать лет кроил для парижских домов моды, теперь у него своё ателье. Каждую вещь ведёт сам, от лекала до последнего стежка. Пальто должно пережить хозяина.</p>
+      </div>
+    </div>
+    <div class="passepartout-wrap reveal">
+      <div class="passepartout">
+        <!-- вместо портрета — паспарту с монограммой -->
+        <span class="monogram">V</span>
+        <span class="sign">ателье VESPÉR · Париж</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- WAITLIST -->
+<section class="waitlist" id="waitlist" data-bg="#0A0A0C" aria-label="Лист ожидания">
+  <div class="grid">
+    <div class="waitlist-text">
+      <p class="eyebrow reveal">Лист ожидания</p>
+      <h2 class="section-title reveal">Мест немного</h2>
+      <p class="lead reveal">Сезон выходит одним выпуском. Записывайтесь в лист ожидания, детали пришлём письмом. Без корзины и спешки.</p>
+    </div>
+    <form class="waitlist-form reveal" id="waitForm" novalidate>
+      <div class="field">
+        <label for="wf-name">Имя</label>
+        <input type="text" id="wf-name" name="name" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label for="wf-email">Почта</label>
+        <input type="email" id="wf-email" name="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="wf-look">Образ</label>
+        <select id="wf-look" name="look">
+          <option value="01">01 · Пальто «Полночь»</option>
+          <option value="02">02 · Костюм «Антрацит»</option>
+          <option value="03">03 · Платье «Мгла»</option>
+          <option value="04">04 · Куртка «Сумерки»</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-accent">Записаться</button>
+      <p class="form-done" id="formDone" role="status">Готово, вы в списке. Напишем, когда откроется сезон.</p>
+    </form>
+  </div>
+</section>
+</main>
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="grid">
+    <div>
+      <div class="footer-logo">VESPÉR</div>
+      <p style="color:var(--muted);font-size:0.85rem;font-weight:300;margin:1rem 0 0;max-width:30ch;">Дом вечерней и верхней одежды. Один выпуск в сезон.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Навигация</h4>
+      <a href="#collection">Коллекция</a>
+      <a href="#atelier">Ателье</a>
+      <a href="#waitlist">Лист ожидания</a>
+    </div>
+    <div class="footer-col">
+      <h4>Связь</h4>
+      <a href="mailto:press@vesper.example">press@vesper.example</a>
+      <div class="socials" style="margin-top:1rem;">
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"/></svg>
+        </a>
+        <a href="#" aria-label="Pinterest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3a9 9 0 0 0-3.3 17.4c-.1-.7-.2-1.8 0-2.6l1-4.4s-.3-.5-.3-1.3c0-1.3.7-2.2 1.6-2.2.8 0 1.1.6 1.1 1.3 0 .8-.5 2-.8 3.1-.2.9.5 1.6 1.4 1.6 1.6 0 2.8-1.7 2.8-4.1 0-2.2-1.5-3.7-3.7-3.7a3.9 3.9 0 0 0-4 3.9c0 .8.3 1.6.7 2 .1.1.1.2 0 .3l-.2 1c0 .2-.1.2-.3.1-1.2-.5-1.9-2.2-1.9-3.5 0-2.8 2-5.4 5.9-5.4 3.1 0 5.5 2.2 5.5 5.2 0 3.1-1.9 5.6-4.6 5.6-.9 0-1.8-.5-2.1-1l-.6 2.2c-.2.8-.7 1.7-1 2.3A9 9 0 1 0 12 3z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <p class="footer-bottom">Демонстрационный проект. Дом VESPÉR вымышлен, сайт создан для портфолио. Коллекция, цены и контакты условны.</p>
+</footer>
+
+<!-- SCRIPTS -->
+<!-- Библиотеки с CDN, версии точные -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hasGSAP = (typeof window.gsap !== "undefined");
+  var hasST   = hasGSAP && (typeof window.ScrollTrigger !== "undefined");
+  var hasLenis = (typeof window.Lenis !== "undefined");
+
+  // ---------- Бургер / шторка (чистый JS, не зависит от CDN) ----------
+  try{
+    var burger = document.getElementById("burger");
+    var drawer = document.getElementById("drawer");
+    function closeDrawer(){
+      drawer.classList.remove("open");
+      burger.classList.remove("open");
+      burger.setAttribute("aria-expanded","false");
+      drawer.setAttribute("aria-hidden","true");
+    }
+    if(burger && drawer){
+      burger.addEventListener("click", function(){
+        var open = drawer.classList.toggle("open");
+        burger.classList.toggle("open", open);
+        burger.setAttribute("aria-expanded", open ? "true":"false");
+        drawer.setAttribute("aria-hidden", open ? "false":"true");
+      });
+      drawer.querySelectorAll("a").forEach(function(a){ a.addEventListener("click", closeDrawer); });
+    }
+  }catch(e){ console.warn("drawer:", e); }
+
+  // ---------- Форма листа ожидания ----------
+  try{
+    var form = document.getElementById("waitForm");
+    var done = document.getElementById("formDone");
+    if(form){
+      form.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        if(done) done.classList.add("show");
+        form.querySelector(".btn-accent").disabled = true;
+      });
+    }
+  }catch(e){ console.warn("form:", e); }
+
+  // ---------- Шапка: док на скролле (нативно, работает и без GSAP) ----------
+  try{
+    var header = document.getElementById("siteHeader");
+    function onScrollHeader(){
+      if(!header) return;
+      if(window.scrollY > window.innerHeight * 0.6) header.classList.add("docked");
+      else header.classList.remove("docked");
+    }
+    window.addEventListener("scroll", onScrollHeader, {passive:true});
+    onScrollHeader();
+  }catch(e){ console.warn("header:", e); }
+
+  // ---------- Видео: выбор источника и ленивая загрузка ткани ----------
+  // Герою src уже поставил инлайн-скрипт в разметке (до загрузки CDN).
+  var smallScreen = window.innerWidth < 768;
+  var heroV = document.getElementById("heroVideo");
+  var fabV  = document.getElementById("fabricVideo");
+  function pickSrc(v){ return smallScreen ? v.dataset.srcM : v.dataset.src; }
+
+  function loadFabric(){
+    if(!fabV || fabV.dataset.loaded) return;
+    fabV.dataset.loaded = "1";
+    if(fabV.dataset.poster) fabV.poster = fabV.dataset.poster;
+    if(reduceMotion) return;            // при reduced-motion только постер
+    fabV.preload = "auto";
+    fabV.src = pickSrc(fabV);
+    fabV.load();
+  }
+  try{
+    var fabSec = document.getElementById("fabric");
+    if(fabV && fabSec && "IntersectionObserver" in window){
+      var fio = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if(en.isIntersecting){ loadFabric(); fio.disconnect(); } });
+      }, { rootMargin: "150% 0px 150% 0px" });
+      fio.observe(fabSec);
+    } else { loadFabric(); }
+  }catch(e){ console.warn("fabric lazy:", e); loadFabric(); }
+
+  // Кадры коллекции: lazy, но при подходе к секции догружаем все четыре,
+  // иначе в горизонтальной ленте картинка за краем экрана грузилась бы в момент раскрытия.
+  try{
+    var collSec = document.getElementById("collection");
+    if(collSec && "IntersectionObserver" in window){
+      var cio = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting){
+            collSec.querySelectorAll("img[loading=lazy]").forEach(function(img){ img.loading = "eager"; });
+            cio.disconnect();
+          }
+        });
+      }, { rootMargin: "120% 0px 120% 0px" });
+      cio.observe(collSec);
+    }
+  }catch(e){ console.warn("coll lazy:", e); }
+
+  // Без ScrollTrigger перемотки не будет: тогда пусть видео просто играют лупом.
+  function fallbackLoop(v){
+    if(!v || reduceMotion) return;
+    v.loop = true;
+    var p = v.play(); if(p && p.catch) p.catch(function(){});
+  }
+
+  // Если нет GSAP или reduced-motion — оставляем статичную страницу (всё видно).
+  if(!hasGSAP || !hasST || reduceMotion){
+    if(!reduceMotion){ fallbackLoop(heroV); if(fabV) fabV.addEventListener("loadeddata", function(){ fallbackLoop(fabV); }, {once:true}); }
+    console.info("VESPER: статичный режим (GSAP:", hasGSAP, "ST:", hasST, "reduceMotion:", reduceMotion, ")");
+    return;
+  }
+
+  // с этого момента анимируем — можно прятать reveal-элементы
+  document.documentElement.classList.add("pre-reveal");
+  gsap.registerPlugin(ScrollTrigger);
+  // прыжок адресной строки на телефоне не должен пересчитывать триггеры
+  ScrollTrigger.config({ ignoreMobileResize: true });
+  var EASE = "expo.out";
+
+  // ---------- Lenis + синхронизация с ScrollTrigger ----------
+  // На тач-экранах прокрутку ведёт сам браузер: Lenis там спорит с инерцией iOS.
+  var isTouch = window.matchMedia && matchMedia("(hover: none) and (pointer: coarse)").matches;
+  var lenis = null;
+  try{
+    if(isTouch){
+      document.querySelectorAll('a[href^="#"]').forEach(function(a){
+        a.addEventListener("click", function(ev){
+          var id = a.getAttribute("href");
+          var t = id.length > 1 && document.querySelector(id);
+          if(!t) return;
+          ev.preventDefault();
+          t.scrollIntoView({ behavior: "smooth" });
+        });
+      });
+    } else if(hasLenis){
+      lenis = new Lenis({ lerp: 0.1, smoothWheel: true, wheelMultiplier: 1 });
+      lenis.on("scroll", ScrollTrigger.update);
+      gsap.ticker.add(function(time){ lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+      document.querySelectorAll('a[href^="#"]').forEach(function(a){
+        a.addEventListener("click", function(ev){
+          var id = a.getAttribute("href");
+          var t = id.length > 1 && document.querySelector(id);
+          if(!t) return;
+          ev.preventDefault();
+          lenis.scrollTo(t, { duration: 1.4 });
+        });
+      });
+    }
+  }catch(e){ console.warn("lenis:", e); lenis = null; }
+
+  // ---------- Перемотка видео скроллом ----------
+  // Видео на паузе. ScrollTrigger задаёт целевой progress, в одном цикле тикера
+  // плавное время догоняет цель (lerp), seek только если разница больше 1/48 сек.
+  var scrubs = [];
+  function makeScrub(v){
+    if(!v) return null;
+    var s = { v: v, progress: 0, cur: 0, dur: 0 };
+    function onMeta(){
+      s.dur = v.duration || 0;
+      // iOS иногда не рисует кадр до первого play: короткий play/pause «будит» декодер
+      var p = v.play();
+      if(p && p.then) p.then(function(){ v.pause(); }).catch(function(){});
+      else v.pause();
+    }
+    if(v.readyState >= 1) onMeta(); else v.addEventListener("loadedmetadata", onMeta, { once: true });
+    scrubs.push(s);
+    return s;
+  }
+  var heroScrub = makeScrub(heroV);
+  var fabScrub  = makeScrub(fabV);
+  window.__vesperScrubs = scrubs; // для проверки из консоли
+
+  gsap.ticker.add(function(){
+    // lerp 0.12 на кадр при 60 fps, пересчитанный под реальную длину кадра
+    var k = 1 - Math.pow(1 - 0.12, gsap.ticker.deltaRatio(60));
+    for(var i = 0; i < scrubs.length; i++){
+      var s = scrubs[i], v = s.v;
+      if(!s.dur || v.readyState < 1) continue;
+      if(!v.paused && s.dur) v.pause();
+      var target = s.progress * (s.dur - 0.04);
+      var d = target - s.cur;
+      s.cur = Math.abs(d) < 0.001 ? target : s.cur + d * k;
+      var settled = (s.cur === target);
+      var gap = Math.abs(s.cur - v.currentTime);
+      if(!v.seeking && (gap > 1/48 || (settled && gap > 0.002))){
+        v.currentTime = s.cur;
+      }
+    }
+  });
+
+  // ---------- Разрезка заголовков на слова/буквы под маску ----------
+  function splitEl(el, mode){
+    if(!el || el.dataset.split) return [];
+    el.dataset.split = "1";
+    el.setAttribute("aria-label", el.textContent.replace(/\s+/g, " ").trim());
+    var inners = [];
+    (function walk(node){
+      Array.prototype.slice.call(node.childNodes).forEach(function(ch){
+        if(ch.nodeType === 3){
+          var parts = mode === "chars" ? ch.textContent.split("") : ch.textContent.split(/(\s+)/);
+          var frag = document.createDocumentFragment();
+          parts.forEach(function(w){
+            if(!w) return;
+            if(/^\s+$/.test(w)){ frag.appendChild(document.createTextNode(" ")); return; }
+            var outer = document.createElement("span"); outer.className = "split-w"; outer.setAttribute("aria-hidden", "true");
+            var inner = document.createElement("span"); inner.textContent = w;
+            outer.appendChild(inner); frag.appendChild(outer); inners.push(inner);
+          });
+          node.replaceChild(frag, ch);
+        } else if(ch.nodeType === 1 && !ch.classList.contains("split-w")){
+          walk(ch);
+        }
+      });
+    })(el);
+    return inners;
+  }
+  function maskReveal(el, opts){
+    var inners = splitEl(el, opts && opts.mode);
+    if(!inners.length) return;
+    el.classList.remove("reveal");
+    var stagger = Math.min(0.06, 0.6 / inners.length);
+    gsap.set(inners, { yPercent: 115 });
+    var vars = { yPercent: 0, duration: 1.15, ease: EASE, stagger: stagger, delay: (opts && opts.delay) || 0 };
+    if(!(opts && opts.immediate)) vars.scrollTrigger = { trigger: el, start: "top 86%", once: true };
+    gsap.to(inners, vars);
+  }
+
+  // ---------- Герой: буквы VESPÉR, затем текст уходит к концу перемотки ----------
+  try{
+    maskReveal(document.querySelector(".hero-title"), { mode: "chars", immediate: true, delay: 0.15 });
+    gsap.from(".hero-tagline", { opacity: 0, y: 14, duration: 1, ease: EASE, delay: 0.7 });
+    ScrollTrigger.create({
+      trigger: ".hero-scroll", start: "top top", end: "bottom bottom",
+      onUpdate: function(self){ if(heroScrub) heroScrub.progress = self.progress; }
+    });
+    gsap.to(".scroll-hint", { opacity: 0, ease: "none",
+      scrollTrigger: { trigger: ".hero-scroll", start: "top top", end: "12% top", scrub: true } });
+    gsap.to(".hero-content, .hero-edition", { opacity: 0, y: -60, ease: "none",
+      scrollTrigger: { trigger: ".hero-scroll", start: "62% bottom", end: "bottom bottom", scrub: true } });
+  }catch(e){ console.warn("hero:", e); }
+
+  // ---------- Коллекция ----------
+  try{
+    var coll  = document.querySelector(".collection");
+    var track = coll.querySelector(".coll-track");
+    var looks = gsap.utils.toArray(".look", coll);
+    var curEl = coll.querySelector(".coll-count .cur");
+    var barEl = coll.querySelector(".coll-bar i");
+    // названия режем заранее, чтобы маска работала в обоих режимах
+    var nameInners = looks.map(function(lk){ return splitEl(lk.querySelector(".look-name")); });
+
+    var mm = gsap.matchMedia();
+
+    // Десктоп: пин + горизонтальная лента
+    mm.add("(min-width: 861px)", function(){
+      document.documentElement.classList.add("coll-live");
+      var dist = function(){ return Math.max(0, track.scrollWidth - window.innerWidth); };
+      var stops = [];
+      function calcStops(){
+        var d = dist() || 1;
+        stops = looks.map(function(lk){
+          var f = lk.querySelector(".look-frame");
+          var c = lk.offsetLeft + f.offsetLeft + f.offsetWidth / 2 - window.innerWidth / 2;
+          return Math.min(1, Math.max(0, c / d));
+        });
+      }
+      var lastIdx = -1;
+      var scroller = gsap.to(track, {
+        x: function(){ return -dist(); },
+        ease: "none",
+        scrollTrigger: {
+          trigger: coll, start: "top top",
+          end: function(){ return "+=" + dist(); },
+          pin: ".coll-pin", scrub: 0.5, anticipatePin: 1, invalidateOnRefresh: true,
+          onRefresh: calcStops,
+          onUpdate: function(self){
+            if(barEl) barEl.style.transform = "scaleX(" + self.progress.toFixed(4) + ")";
+            var best = 0, bd = 9;
+            for(var i = 0; i < stops.length; i++){ var dd = Math.abs(stops[i] - self.progress); if(dd < bd){ bd = dd; best = i; } }
+            if(best !== lastIdx && curEl){ lastIdx = best; curEl.textContent = "0" + (best + 1); }
+          }
+        }
+      });
+      calcStops();
+      window.__vesperColl = scroller;
+
+      // вступление ленты
+      gsap.from(".coll-intro .eyebrow, .coll-intro-ghost", { opacity: 0, x: 60, duration: 1.2, ease: EASE, stagger: 0.12,
+        scrollTrigger: { trigger: coll, start: "top 70%", once: true } });
+      gsap.to(".coll-intro-ghost", { xPercent: -25, ease: "none",
+        scrollTrigger: { trigger: ".coll-intro", containerAnimation: scroller, start: "left left", end: "right left", scrub: true } });
+
+      looks.forEach(function(lk, i){
+        var clip = lk.querySelector(".look-clip");
+        var img  = clip.querySelector("img");
+        var ghost = lk.querySelector(".look-ghost");
+        var note = lk.querySelector(".look-note");
+        var frame = lk.querySelector(".look-frame");
+        var ca = { containerAnimation: scroller, scrub: true };
+
+        // шторка кадра снизу вверх, внутри лёгкий наезд 1.15 → 1
+        gsap.fromTo(clip, { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "power2.out",
+          scrollTrigger: Object.assign({ trigger: frame, start: "left 92%", end: "left 42%" }, ca) });
+        gsap.fromTo(img, { scale: 1.15 }, { scale: 1, ease: "none",
+          scrollTrigger: Object.assign({ trigger: frame, start: "left right", end: "right 30%" }, ca) });
+        // глубина: контурный номер едет медленнее ленты; подпись стоит у кадра
+        gsap.fromTo(ghost, { xPercent: 35 }, { xPercent: -35, ease: "none",
+          scrollTrigger: Object.assign({ trigger: lk, start: "left right", end: "right left" }, ca) });
+        // слова названия поднимаются из-под маски
+        gsap.fromTo(nameInners[i], { yPercent: 115 }, { yPercent: 0, ease: "power3.out", stagger: 0.15,
+          scrollTrigger: Object.assign({ trigger: frame, start: "left 78%", end: "left 38%" }, ca) });
+        gsap.fromTo(note, { opacity: 0, y: 24 }, { opacity: 1, y: 0, ease: "power2.out",
+          scrollTrigger: Object.assign({ trigger: frame, start: "left 60%", end: "left 35%" }, ca) });
+      });
+
+      return function(){ window.__vesperColl = null; document.documentElement.classList.remove("coll-live"); };
+    });
+
+    // Телефон: вертикально, те же раскрытия и крупная типографика
+    mm.add("(max-width: 860px)", function(){
+      looks.forEach(function(lk, i){
+        var clip = lk.querySelector(".look-clip");
+        var img  = clip.querySelector("img");
+        var ghost = lk.querySelector(".look-ghost");
+        var note = lk.querySelector(".look-note");
+        gsap.fromTo(clip, { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "power2.out",
+          scrollTrigger: { trigger: lk, start: "top 85%", end: "top 25%", scrub: true } });
+        gsap.fromTo(img, { scale: 1.15 }, { scale: 1, ease: "none",
+          scrollTrigger: { trigger: lk, start: "top bottom", end: "bottom 40%", scrub: true } });
+        gsap.fromTo(ghost, { yPercent: 25 }, { yPercent: -15, ease: "none",
+          scrollTrigger: { trigger: lk, start: "top bottom", end: "bottom top", scrub: true } });
+        gsap.fromTo(nameInners[i], { yPercent: 115 }, { yPercent: 0, duration: 1.1, ease: EASE, stagger: 0.12,
+          scrollTrigger: { trigger: lk.querySelector(".look-name"), start: "top 88%", once: true } });
+        gsap.fromTo(note, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.9, ease: EASE,
+          scrollTrigger: { trigger: note, start: "top 90%", once: true } });
+      });
+      gsap.from(".coll-intro .eyebrow, .coll-intro-ghost", { opacity: 0, y: 30, duration: 1.1, ease: EASE, stagger: 0.12,
+        scrollTrigger: { trigger: coll, start: "top 80%", once: true } });
+    });
+  }catch(e){ console.warn("collection:", e); }
+
+  // ---------- Заголовки секций: маска по словам ----------
+  try{
+    document.querySelectorAll(".manifest-text, .section-title, .atelier-name").forEach(function(el){ maskReveal(el); });
+  }catch(e){ console.warn("split:", e); }
+
+  // ---------- Мягкая смена фона между секциями ----------
+  try{
+    document.querySelectorAll("[data-bg]").forEach(function(sec){
+      ScrollTrigger.create({
+        trigger: sec, start: "top 55%", end: "bottom 55%",
+        onToggle: function(self){
+          if(self.isActive) gsap.to(document.body, { backgroundColor: sec.dataset.bg, duration: 1.1, ease: "power2.out", overwrite: "auto" });
+        }
+      });
+    });
+  }catch(e){ console.warn("bg:", e); }
+
+  // ---------- Ткань: шторка на входе + перемотка ----------
+  try{
+    var fabText = document.querySelector(".fabric-text");
+    if(fabText) fabText.classList.remove("reveal");
+    gsap.fromTo(".fabric-media", { clipPath: "inset(16% 12% 16% 12%)" }, {
+      clipPath: "inset(0% 0% 0% 0%)", ease: "none",
+      scrollTrigger: { trigger: ".fabric-scroll", start: "top bottom", end: "top top", scrub: true }
+    });
+    gsap.from(".fabric-text .eyebrow, .fabric-text .lead", { opacity: 0, y: 18, duration: 1, ease: EASE, stagger: 0.12,
+      scrollTrigger: { trigger: ".fabric-scroll", start: "top 25%", once: true } });
+    ScrollTrigger.create({
+      trigger: ".fabric-scroll", start: "top 70%", end: "bottom bottom",
+      onUpdate: function(self){ if(fabScrub) fabScrub.progress = self.progress; }
+    });
+  }catch(e){ console.warn("fabric:", e); }
+
+  // ---------- Ателье: шторка паспарту снизу вверх ----------
+  try{
+    var pp = document.querySelector(".passepartout-wrap");
+    if(pp){
+      pp.classList.remove("reveal");
+      gsap.fromTo(pp, { clipPath: "inset(100% 0% 0% 0%)" }, {
+        clipPath: "inset(0% 0% 0% 0%)", duration: 1.4, ease: "expo.inOut",
+        scrollTrigger: { trigger: pp, start: "top 82%", once: true }
+      });
+      gsap.fromTo(".passepartout .monogram", { scale: 1.25, opacity: 0 }, {
+        scale: 1, opacity: 1, duration: 1.6, ease: EASE, delay: 0.5,
+        scrollTrigger: { trigger: pp, start: "top 82%", once: true }
+      });
+    }
+  }catch(e){ console.warn("atelier:", e); }
+
+  // ---------- Reveal остальных мелких элементов ----------
+  try{
+    gsap.utils.toArray(".reveal").forEach(function(el){
+      gsap.fromTo(el, { opacity: 0, y: 24 }, {
+        opacity: 1, y: 0, duration: 0.9, ease: EASE,
+        scrollTrigger: { trigger: el, start: "top 84%", once: true }
+      });
+    });
+  }catch(e){
+    console.warn("reveal:", e);
+    document.documentElement.classList.remove("pre-reveal");
+  }
+
+  // пересчёт после загрузки шрифтов/картинок
+  try{
+    window.addEventListener("load", function(){ ScrollTrigger.refresh(); });
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(function(){ ScrollTrigger.refresh(); }); }
+  }catch(e){ console.warn("refresh:", e); }
+
+  console.info("VESPER: анимации активны (Lenis:", !!lenis, ")");
+})();
+</script>
+
+</body>
+</html>
